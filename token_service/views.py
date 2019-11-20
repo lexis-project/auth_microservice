@@ -255,7 +255,7 @@ def return_to_whitelisted(url):
             logging.warn('return_to url must be a valid http/https url, received: [{}]'.format(url))
             return False
         domain = parsed.netloc.split(':')[0]
-        for allowed_reg in allowed_list:
+        for allowed_reg in allowed_list: 
             if not allowed_reg.startswith('^'):
                 allowed_reg = '^' + allowed_reg
             if not allowed_reg.endswith('$'):
@@ -269,7 +269,6 @@ def return_to_whitelisted(url):
             else:
                 logging.debug('no match: ' + str(match))
         return allowed
-
 
 @require_http_methods(['GET'])
 def url(request):
@@ -367,7 +366,7 @@ def token(request):
         try:
             handler = redirect_handler.get_handler(token=token)
             token = handler._refresh_token(token)
-        except RuntimeError:
+        except RuntimeError as e:
             return JsonResponse(status=410, data={'msg': 'Token has expired'})
 
     return JsonResponse(status=200, data={
@@ -546,7 +545,7 @@ def verify_user_key(request, **kwargs):
         else:  # don't check user
             key = models.User_key.objects.get(key_hash=key_hash)
             return JsonResponse(status=200, data={'valid': True, 'uid': key.user.sub, 'user_name': key.user.user_name})
-    except ObjectDoesNotExist:
+    except ObjectDoesNotExist as e:
         return JsonResponse(status=401, data={'valid': False})
 
 

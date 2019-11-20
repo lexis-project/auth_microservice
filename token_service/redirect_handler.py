@@ -5,8 +5,11 @@ import jwt
 import logging
 import requests
 from calendar import timegm
-
-from django.core.exceptions import ObjectDoesNotExist
+logger = logging.getLogger(__name__)
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
 from django.http import (
         HttpResponse,
         HttpResponseBadRequest,
@@ -22,13 +25,6 @@ from .config import Config
 from . import models
 from .util import logging_sensitive
 
-logger = logging.getLogger(__name__)
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
-
-
 STANDARD_OPENID_CONNECT = 'OpenID Connect'
 STANDARD_OAUTH2 = 'OAuth 2.0'
 SUPPORTED_STANDARDS = [STANDARD_OPENID_CONNECT, STANDARD_OAUTH2]
@@ -37,7 +33,6 @@ PROVIDER_GOOGLE = 'google'
 PROVIDER_AUTH0 = 'auth0'
 PROVIDER_KEYCLOAK = 'keycloak_openid'
 DEFAULT_PROVIDER = PROVIDER_KEYCLOAK
-
 
 def is_supported(provider):
     return Config['providers'][provider]['standard'] in SUPPORTED_STANDARDS
@@ -57,7 +52,7 @@ def get_or_update_OIDC_cache(provider_tag):
     cache = models.OIDCMetadataCache.objects.filter(provider=provider_tag)
     if cache.count() == 0 or (cache[0].retrieval_time + datetime.timedelta(hours=24)) < now():
         # not cached, or cached entry is more than 1 day old
-        response = requests.get(meta_url)
+        response = requests.get(meta_url, verify=False)
         if response.status_code != 200:
             raise RuntimeError('could not retrieve openid metadata from {}, returned error: {}\n{}'.format(
                 meta_url, response.status_code, response.content.decode('utf-8')))
@@ -193,7 +188,7 @@ def get_validator(provider=DEFAULT_PROVIDER):
     elif provider == PROVIDER_GLOBUS:
         return GlobusValidator()
     elif provider == PROVIDER_KEYCLOAK:
-        return KeycloakValidator()
+        return Validator()
     else:
         raise inv
 
@@ -502,7 +497,7 @@ class RedirectHandler(object):
             endpoint = get_provider_config(provider, 'userinfo_endpoint')
             logging.debug("No introspection endpoint, using userinfo endpoint %s", endpoint)
 
-        response = requests.get(endpoint, headers=headers)
+        response = requests.get(endpoint, headers=headers, verify=False)
         content = response.content.decode('utf-8')
         if response.status_code != 200:
             return HttpResponse(status=401, content='Invalid token: ' + content)
@@ -530,7 +525,7 @@ class RedirectHandler(object):
             'Authorization': 'Basic ' + str(authorization.decode('utf-8')),
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.post(token_endpoint, headers=headers, data=data)
+        response = requests.post(token_endpoint, headers=headers, data=data, verify=False)
         return response
 
     def _refresh_token(self, token_model):
@@ -549,7 +544,7 @@ class RedirectHandler(object):
             'Authorization': 'Basic ' + str(authorization.decode('utf-8')),
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.post(token_endpoint, headers=headers, data=data)
+        response = requests.post(token_endpoint, headers=headers, data=data, verify=False)
         if response.status_code != 200:
             raise RuntimeError('could not refresh token, provider returned: {}\n{}'.format(
                 response.status_code, response.content))
@@ -644,7 +639,7 @@ class Auth0RedirectHandler(RedirectHandler):
         if not w:
             return HttpResponseBadRequest('callback request from login is malformed, or authorization session expired')
         if now() > w.creation_time + datetime.timedelta(seconds=Config['url_expiration_timeout']):
-            return HttpResponseBadRequest('This authorization url has expired, please retry')
+                return HttpResponseBadRequest('This authorization url has expired, please retry')
         client_id = Config['providers'][PROVIDER_AUTH0]['client_id']
         client_secret = Config['providers'][PROVIDER_AUTH0]['client_secret']
         redirect_uri = Config['redirect_uri']
@@ -684,7 +679,6 @@ class Auth0RedirectHandler(RedirectHandler):
 
     def _refresh_token(self, token_model):
         provider_config = Config['providers'][PROVIDER_AUTH0]
-        token_endpoint = Config['providers'][PROVIDER_AUTH0]['token_endpoint']
         if not token_model.refresh_token:
             # don't rely on exception for this
             raise RuntimeError('No refresh token available')
@@ -700,7 +694,7 @@ class Auth0RedirectHandler(RedirectHandler):
             'Authorization': 'Basic ' + str(authorization.decode('utf-8')),
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.post(token_endpoint, headers=headers, data=data)
+        response = requests.post(token_endpoint, headers=headers, data=data, verify=False)
         if response.status_code != 200:
             raise RuntimeError('could not refresh token, provider returned: {}\n{}'.format(
                 response.status_code, response.content))
@@ -784,10 +778,12 @@ class GlobusRedirectHandler(RedirectHandler):
             # TODO: why handle more than one, only first element of tokens is passed?
             # TODO: not success check?
             tokens.append(token)
+
         return (True, '', user, tokens[0], nonce)
 
-
-# This is a reference implementation for OIDC IPDs which conform exactly to spec
+"""
+This is a reference implementation for OIDC IPDs which conform exactly to spec
+"""
 class Validator(object):
     def validate(self, token, provider=DEFAULT_PROVIDER):
         endpoint = get_provider_config(provider, 'introspection_endpoint')
@@ -803,7 +799,7 @@ class Validator(object):
         # TODO: debug sensitive?
         logging.debug("validate endpoint %s headers %s body %s", endpoint, json.dumps(headers), json.dumps(body))
 
-        response = requests.post(endpoint, headers=headers, data=body)
+        response = requests.post(endpoint, headers=headers, data=body, verify=False)
         content = response.content.decode('utf-8')
         if response.status_code > 400:
             logging.error('validate failed on %s. returned [%s] %s', endpoint, response.status_code, content)
@@ -829,17 +825,15 @@ class Validator(object):
                 return r
         return {'active': False}
 
-
 class GlobusValidator(Validator):
     def validate(self, token, provider=PROVIDER_GLOBUS):
         return Validator().validate(token, provider)
-
 
 class Auth0Validator(Validator):
     def validate(self, token, provider=PROVIDER_AUTH0):
         endpoint = Config['providers'][PROVIDER_AUTH0]['userinfo_endpoint']
         endpoint += '?access_token={}'.format(token)
-        response = requests.get(endpoint)
+        response = requests.get(endpoint, verify=False)
         if response.status_code < 300:
             try:
                 body = json.loads(response.content.decode('utf-8'))
@@ -878,7 +872,7 @@ class Auth0Validator(Validator):
             for validator in [GlobusValidator, GoogleValidator]:
                 logging.debug('trying to validate against {} with token {}'.format(validator, token))
                 vresp = validator().validate(token)
-                if vresp['active'] is True:
+                if vresp['active'] == True:
                     return vresp
             return {'active': False}
 
@@ -888,7 +882,7 @@ class GoogleValidator(Validator):
         ept = get_provider_config(provider, 'introspection_endpoint')
         endpoint = '{}?access_token={}'.format(ept, token)
 
-        response = requests.post(endpoint)
+        response = requests.post(endpoint, verify=False)
         content = response.content.decode('utf-8')
         if response.status_code > 400:
             logging.warn('validate failed on %s. returned [%s] %s',
@@ -906,8 +900,3 @@ class GoogleValidator(Validator):
                     r['sub'] = body['user_id']
                 return r
         return {'active': False}
-
-
-class KeycloakValidator(Validator):
-    def validate(self, token, provider=PROVIDER_KEYCLOAK):
-        return Validator().validate(token, provider)

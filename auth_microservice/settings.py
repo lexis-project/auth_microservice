@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 # Logging
 #
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Uncomment to debug sensitive data
 # from token_service import config
