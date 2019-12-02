@@ -5,6 +5,7 @@ import jwt
 import logging
 import requests
 from calendar import timegm
+
 logger = logging.getLogger(__name__)
 try:
     from urllib.parse import quote

@@ -19,6 +19,9 @@ from . import redirect_handler
 from . import config
 from . import util
 
+import jwt
+from calendar import timegm
+
 Config = config.Config
 access_token_validation_cache = {}
 
@@ -396,12 +399,38 @@ def authcallback(request):
 
 
 def validate_token(request):
+# Only valid for keycloak !!
     provider = request.GET.get('provider')
     access_token = request.GET.get('access_token')
     token_validator = redirect_handler.get_validator(provider)
-
+    print ("token <%s>" % access_token)
+    #rgh: this may be a hash from iRODS, check database as well
     validate_response = token_validator.validate(access_token)
+    if validate_response['active']==False:
+       tokens = models.Token.objects.filter(access_token_hash=access_token)
+       print ("trying with token as hash")
+       print ("found %d tokens" % len(tokens))
+       if len(tokens)>0:
+          validate_response = token_validator.validate(tokens[0].access_token)
+    else: 
+# good token, add it to the database in case we get an iRODS query-by-hash
+       if validate_response['active']==True:
+          token_info=jwt.decode(access_token, verify=False)
+          rh=redirect_handler.get_handler(request, access_token)
+          n = now()
+          iat_local = timegm(n.timetuple())
+          u=models.User.objects.filter(sub= token_info["sub"])
+          if len(u)!=1:
+             print ("Unknown user, cannot add to database")
+             return JsonResponse(status=200, data=validate_response)
+          rh._handle_token_body(user= u[0], 
+                   provider= provider, 
+                   issuer= token_info["iss"], 
+                   scopes= token_info["scope"].split(' '), 
+                   nonce= token_info["nonce"], 
+                   token_dict= {"access_token":access_token, "refresh_token":None, "expires_in":token_info["exp"]-iat_local})
     logging.debug('validate_response: %s', validate_response)
+    print ('validate_response: %s', validate_response)
     return JsonResponse(status=200, data=validate_response)
 
 
