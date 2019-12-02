@@ -419,11 +419,8 @@ def validate_token(request):
           rh=redirect_handler.get_handler(request, access_token)
           n = now()
           iat_local = timegm(n.timetuple())
-          u=models.User.objects.filter(sub= token_info["sub"])
-          if len(u)!=1:
-             print ("Unknown user, cannot add to database")
-             return JsonResponse(status=200, data=validate_response)
-          rh._handle_token_body(user= u[0], 
+          u=redirect_handler.get_user (provider, token_info["sub"], token_info["preferred_username"], token_info["name"])
+          rh._handle_token_body(user= u, 
                    provider= provider, 
                    issuer= token_info["iss"], 
                    scopes= token_info["scope"].split(' '), 
