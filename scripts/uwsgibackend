@@ -15,7 +15,7 @@
 NAME="uwsgibackend"
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 APPDIR="/root"
-APPBIN="/usr/bin/uswgi"
+APPBIN="/usr/bin/uwsgi"
 APPARGS="--ini /root/uwsgi.ini"
 USER="root"
 GROUP="root"
