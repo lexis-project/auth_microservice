@@ -123,7 +123,7 @@ def prune_invalid(tokens):
                 if cache_entry['val']:
                     valid.append(t)
                 # within validation cache window for this token
-                logging.debug('token validation cached for acces_token %s provider %s', t.access_token, t.provider)
+                logging.debug('token validation cached for access_token %s provider %s', t.access_token, t.provider)
                 continue
         if len(t.access_token) and len(t.provider):
             if t.provider in validators:
@@ -423,8 +423,9 @@ def validate_token(request):
           rh._handle_token_body(user= u, 
                    provider= provider, 
                    issuer= token_info["iss"], 
-                   scopes= token_info["scope"].split(' '), 
-                   nonce= token_info["nonce"], 
+                   scopes= token_info["scope"].split(' '),
+                   #rgh: nonce may not exist if using DirectAccessGrants
+                   nonce= token_info.get("nonce", None), 
                    token_dict= {"access_token":access_token, "refresh_token":None, "expires_in":token_info["exp"]-iat_local})
     logging.debug('validate_response: %s', validate_response)
     print ('validate_response: %s', validate_response)
