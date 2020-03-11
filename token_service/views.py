@@ -22,6 +22,8 @@ from . import util
 import jwt
 from calendar import timegm
 
+import pdb
+
 Config = config.Config
 access_token_validation_cache = {}
 
@@ -322,6 +324,7 @@ def subject_by_nonce(request):
 
 @require_http_methods(['GET'])
 def token(request):
+#    pdb.set_trace()
     nonce = request.GET.get('nonce')
     # api key authentication when no nonce provided
     if not nonce and not _valid_api_key(request):
@@ -397,9 +400,9 @@ def authcallback(request):
     # handler.accept returns a Django response or throws an exception
     return red_resp
 
-
 def validate_token(request):
 # Only valid for keycloak !!
+#    pdb.set_trace()
     provider = request.GET.get('provider')
     access_token = request.GET.get('access_token')
     token_validator = redirect_handler.get_validator(provider)
@@ -420,12 +423,13 @@ def validate_token(request):
           n = now()
           iat_local = timegm(n.timetuple())
           u=redirect_handler.get_user (provider, token_info["sub"], token_info["preferred_username"], token_info["name"])
+          nonce=token_info.get("nonce", util.generate_nonce(64))
           rh._handle_token_body(user= u, 
                    provider= provider, 
                    issuer= token_info["iss"], 
                    scopes= token_info["scope"].split(' '),
                    #rgh: nonce may not exist if using DirectAccessGrants
-                   nonce= token_info.get("nonce", None), 
+                   nonce= nonce, 
                    token_dict= {"access_token":access_token, "refresh_token":None, "expires_in":token_info["exp"]-iat_local})
     logging.debug('validate_response: %s', validate_response)
     print ('validate_response: %s', validate_response)
