@@ -808,7 +808,7 @@ class Validator(object):
         else:
             try:
                 body = json.loads(content)
-                logging.debug('validate repsonse body from json %s', body)
+                logging.debug('validate response body from json %s', body)
             except json.JSONDecodeError:
                 logging.error('could not decode validate response: %s', content)
                 return {'active': False}
