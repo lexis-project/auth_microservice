@@ -32,7 +32,7 @@ class Crypt(object):
         logging_sensitive('crypt.encrypt iv: %s', iv)
 
         aes = AES.new(self.key, AES.MODE_CFB, iv)
-        encr = aes.encrypt(plaintext)
+        encr = aes.encrypt(plaintext.encode('utf-8'))
         enco = base64.b64encode(iv + encr)
         enco = enco.decode('utf-8')
         logging_sensitive("encrypted [%s] to [%s]", plaintext, enco)

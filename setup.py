@@ -16,9 +16,10 @@ setup(
     install_requires=[
         'Django',
         'django-extensions',
-        'pycrypto',
+        'pycryptodome',
         'requests',
         'pyjwt',
+	'psycopg2-binary'
     ],
     tests_require=[
         'pyjwkest>=1.3.0',
