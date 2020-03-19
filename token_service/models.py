@@ -15,7 +15,7 @@ class EncryptedTextField(models.TextField):
 
     # invoked to convert db value to python value
     #    context: not used as from django 2.0
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection, context=None):
         logging_sensitive('EncryptedTextField.from_db_value value: %s', value)
         dec = self.crypt.decrypt(value)
         logging_sensitive('EncryptedTextField.from_db_value(%s) -> %s', value, dec)
