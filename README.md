@@ -234,3 +234,7 @@ Migrations for 'token_service':
     - Add field nonce to token
 
 ```
+
+## Django version
+
+This app uses django 1.8+, or django 2.*, but not django 3.*.
