@@ -402,7 +402,7 @@ def authcallback(request):
 
 def validate_token(request):
 # Only valid for keycloak !!
-#    pdb.set_trace()
+    #pdb.set_trace()
     provider = request.GET.get('provider')
     access_token = request.GET.get('access_token')
     token_validator = redirect_handler.get_validator(provider)
@@ -418,7 +418,7 @@ def validate_token(request):
     else: 
 # good token, add it to the database in case we get an iRODS query-by-hash
        if validate_response['active']==True:
-          token_info=jwt.decode(access_token, verify=False)
+          token_info=jwt.decode(access_token, verify=False, algorithms=["HS256", "RS256"])
           rh=redirect_handler.get_handler(request, access_token)
           n = now()
           iat_local = timegm(n.timetuple())
