@@ -422,7 +422,12 @@ def validate_token(request):
           rh=redirect_handler.get_handler(request, access_token)
           n = now()
           iat_local = timegm(n.timetuple())
-          u=redirect_handler.get_user (provider, token_info["sub"], token_info["preferred_username"], token_info["name"])
+          tin = token_info.get("name", None)
+          if tin is None:
+              print ("tin is none")
+              print ("token_info: ", token_info)
+              logging.debug("tin is none, token_info: "+str(token_info))
+          u=redirect_handler.get_user (provider, token_info["sub"], token_info["preferred_username"], tin)
           nonce=token_info.get("nonce", util.generate_nonce(64))
           rh._handle_token_body(user= u, 
                    provider= provider, 
