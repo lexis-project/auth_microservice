@@ -1,0 +1,35 @@
+version: '3'
+services:
+    db:
+      container_name: postgres
+      image: postgres
+      environment:
+        POSTGRES_PASSWORD: 'password123'
+        POSTGRES_USER: 'auth_microservice'
+      volumes:
+        - db_data:/var/lib/postgresql/data/
+
+    uwsgi:
+      container_name: api
+      build: .
+      restart: always
+      volumes:
+      - logs:/var/log
+      - /etc/auth_microservice:/etc/auth_microservice
+      ports:
+        - "3031"
+      depends_on:
+      - db
+
+    nginx:
+      container_name: nginx
+      build:
+        context: ./docker/nginx
+      restart: always
+      depends_on:
+        - uwsgi
+      ports:
+        - 0.0.0.0:8080:80
+volumes:
+    db_data:
+    logs:

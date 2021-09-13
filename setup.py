@@ -19,7 +19,8 @@ setup(
         'pycryptodome',
         'requests',
         'pyjwt',
-	'psycopg2-binary'
+        'psycopg2-binary',
+        'six'
     ],
     tests_require=[
         'pyjwkest>=1.3.0',
