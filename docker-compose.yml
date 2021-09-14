@@ -4,7 +4,6 @@ services:
       container_name: postgres
       image: postgres
       environment:
-        POSTGRES_PASSWORD: 'password123'
         POSTGRES_USER: 'auth_microservice'
       volumes:
         - db_data:/var/lib/postgresql/data/
