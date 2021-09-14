@@ -17,8 +17,5 @@ WORKDIR /tmp/auth_microservice
 # Create Python package for auth_microservice
 RUN pip3 install .
 
-COPY test_config /etc/auth_microservice
-RUN
-
 COPY docker/conf/uwsgi.ini /etc/uwsgi.ini
 CMD python3 /tmp/auth_microservice/auth_microservice/manage.py migrate && uwsgi /etc/uwsgi.ini
