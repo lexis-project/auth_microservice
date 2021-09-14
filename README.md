@@ -4,6 +4,27 @@
 
 Microservice which abstracts out OAuth2/OpenID exchanges and token management from applications
 
+## Docker
+Production-ready Docker compose is available with uwsgi, nginx and PostgreSQL.
+
+### Configuration
+1. Copy `auth_microservice.env.example` to `auth_microservice.env`
+2. Edit `auth_microservice.env` and set `POSTGRESS_PASSWORD`
+3. Copy `example/config/*` to `/etc/auth_microservice` on the target machine
+4. Fill out all information in `/etc/auth_microservice`
+
+Use the following template for `db.credentials` - change only password:
+```json
+{
+    "user": "auth_microservice",
+    "password": "< SAME AS IN auth_microservice.env >",
+    "host": "postgres",
+    "port": "5432",
+    "backend": "django.db.backends.postgresql_psycopg2"
+}
+```
+
+
 ## Installation
 
 Create a service account and set up directories owned/used by it
