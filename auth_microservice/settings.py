@@ -69,9 +69,7 @@ load_json_config()
 # Django configuration
 #
 
-ALLOWED_HOSTS = [
-    # Add here
-]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
