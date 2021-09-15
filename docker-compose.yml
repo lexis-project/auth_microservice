@@ -4,6 +4,8 @@ services:
       hostname: postgres
       image: postgres
       restart: always
+      env_file:
+        - auth_microservice.env
       environment:
         POSTGRES_USER: 'auth_microservice'
       volumes:
