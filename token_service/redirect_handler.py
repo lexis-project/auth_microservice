@@ -452,7 +452,7 @@ class RedirectHandler(object):
 
         # expand the id_token to the encoded json object
         # TODO signature validation if signature provided
-        id_token = jwt.decode(id_token, verify=False)
+        id_token = jwt.decode(id_token, verify=False, options={"verify_signature": False}, algorithms=["HS256", "RS256"])
         logging.debug('id_token: %s', id_token)
         if 'iat' in id_token and 'exp' in id_token:
             # TODO: Why not use these?
