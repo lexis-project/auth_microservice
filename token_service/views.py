@@ -373,6 +373,7 @@ def token(request):
             handler = redirect_handler.get_handler(token=token)
             token = handler._refresh_token(token)
         except RuntimeError as e:
+            logging.debug("token was expired, and refreshing gave RuntimeError ("+str(e)+"). Returning 410")
             return JsonResponse(status=410, data={'msg': 'Token has expired'})
 
     return JsonResponse(status=200, data={
