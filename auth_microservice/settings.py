@@ -74,7 +74,6 @@ load_json_config()
 
 ALLOWED_HOSTS = ['*']
 
-
 # Application definition
 
 INSTALLED_APPS = [

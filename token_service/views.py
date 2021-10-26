@@ -80,7 +80,7 @@ def _get_tokens(uid, scopes, provider, validate=False):
         user__sub=uid,
         # scopes__in=models.Scope.objects.filter(name__in=scopes),
         provider=provider
-    ).order_by('-expires')  # sort by expiration ascending (~oldest first~)
+    ).order_by('-expires')  # sort by expiration descending (~newest first~)
     tokens = []
     for t in queryset:
         token_scope_names = [s.name for s in t.scopes.all()]
