@@ -41,8 +41,11 @@ LOGGING = {
     'loggers': {
         '': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO'
         },
+        'django.utils.autoreload': {
+            'level': 'INFO'
+        }
     },
 }
 import logging.config

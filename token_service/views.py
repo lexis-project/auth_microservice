@@ -80,7 +80,7 @@ def _get_tokens(uid, scopes, provider, validate=False):
         user__sub=uid,
         # scopes__in=models.Scope.objects.filter(name__in=scopes),
         provider=provider
-    ).order_by('expires')  # sort by expiration ascending (~oldest first~)
+    ).order_by('-expires')  # sort by expiration ascending (~oldest first~)
     tokens = []
     for t in queryset:
         token_scope_names = [s.name for s in t.scopes.all()]
@@ -149,8 +149,8 @@ def prune_invalid(tokens):
                     handler = redirect_handler.get_handler(token=t)
                     t = handler._refresh_token(t)
                     valid.append(t)
-                except RuntimeError:
-                    logging.debug('token %s belonging to uid %s was revoked', t.access_token, t.user.sub)
+                except RuntimeError as re:
+                    logging.debug('token %s belonging to uid %s was revoked: %s', t.access_token, t.user.sub, re)
                     t.delete()
         else:
             logging.debug('token %s found with no access_token or provider field', t)
@@ -376,12 +376,12 @@ def token(request):
             logging.debug("token was expired, and refreshing gave RuntimeError ("+str(e)+"). Returning 410")
             return JsonResponse(status=410, data={'msg': 'Token has expired'})
 
+    logging.info("returning token for user {0} with hash: {1}".format(token.user.user_name, token.access_token_hash))
     return JsonResponse(status=200, data={
         'access_token': token.access_token,
         'uid': token.user.sub,
         'user_name': token.user.user_name
     })
-
 
 # TODO
 def prune_duplicate_tokens(tokens):
