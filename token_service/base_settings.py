@@ -95,7 +95,7 @@ def make_database_mem():
     logging.info('generate django memory database configuration')
     return {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+        'NAME': '/tmp/auth_db',
     }
 
 
@@ -166,5 +166,8 @@ def load_json_config():
                 raise RuntimeError('real_time_validate_cache_retention_timeout must be a positive integer')
             else:
                 d['real_time_validate_cache_retention_timeout'] = int(d['real_time_validate_cache_retention_timeout'])
+
+            if 'verify_tls' not in d:
+                d['verify_tls'] = True
 
         tsc.Config = d

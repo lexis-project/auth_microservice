@@ -63,7 +63,7 @@ DB_KEY = get_db_key()
 ADMIN_KEY = get_admin_key()
 
 DATABASES = {
-    'default': make_database(),
+    'default': make_database_mem(),
 }
 
 load_json_config()

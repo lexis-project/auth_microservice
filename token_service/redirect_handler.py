@@ -53,7 +53,7 @@ def get_or_update_OIDC_cache(provider_tag):
     cache = models.OIDCMetadataCache.objects.filter(provider=provider_tag)
     if cache.count() == 0 or (cache[0].retrieval_time + datetime.timedelta(hours=24)) < now():
         # not cached, or cached entry is more than 1 day old
-        response = requests.get(meta_url, verify=False)
+        response = requests.get(meta_url, verify=Config['verify_tls'])
         if response.status_code != 200:
             raise RuntimeError('could not retrieve openid metadata from {}, returned error: {}\n{}'.format(
                 meta_url, response.status_code, response.content.decode('utf-8')))
@@ -452,7 +452,7 @@ class RedirectHandler(object):
 
         # expand the id_token to the encoded json object
         # TODO signature validation if signature provided
-        id_token = jwt.decode(id_token, verify=False, options={"verify_signature": False}, algorithms=["HS256", "RS256"])
+        id_token = jwt.decode(id_token, verify=Config['verify_tls'], options={"verify_signature": False}, algorithms=["HS256", "RS256"])
         logging.debug('id_token: %s', id_token)
         if 'iat' in id_token and 'exp' in id_token:
             # TODO: Why not use these?
@@ -498,7 +498,7 @@ class RedirectHandler(object):
             endpoint = get_provider_config(provider, 'userinfo_endpoint')
             logging.debug("No introspection endpoint, using userinfo endpoint %s", endpoint)
 
-        response = requests.get(endpoint, headers=headers, verify=False)
+        response = requests.get(endpoint, headers=headers, verify=Config['verify_tls'])
         content = response.content.decode('utf-8')
         if response.status_code != 200:
             return HttpResponse(status=401, content='Invalid token: ' + content)
@@ -526,7 +526,7 @@ class RedirectHandler(object):
             'Authorization': 'Basic ' + str(authorization.decode('utf-8')),
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.post(token_endpoint, headers=headers, data=data, verify=False)
+        response = requests.post(token_endpoint, headers=headers, data=data, verify=Config['verify_tls'])
         return response
 
     def _refresh_token(self, token_model):
@@ -545,7 +545,7 @@ class RedirectHandler(object):
             'Authorization': 'Basic ' + str(authorization.decode('utf-8')),
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.post(token_endpoint, headers=headers, data=data, verify=False)
+        response = requests.post(token_endpoint, headers=headers, data=data, verify=Config['verify_tls'])
         if response.status_code != 200:
             raise RuntimeError('could not refresh token, provider returned: {}\n{}'.format(
                 response.status_code, response.content))
@@ -695,7 +695,7 @@ class Auth0RedirectHandler(RedirectHandler):
             'Authorization': 'Basic ' + str(authorization.decode('utf-8')),
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.post(token_endpoint, headers=headers, data=data, verify=False)
+        response = requests.post(token_endpoint, headers=headers, data=data, verify=Config['verify_tls'])
         if response.status_code != 200:
             raise RuntimeError('could not refresh token, provider returned: {}\n{}'.format(
                 response.status_code, response.content))
@@ -800,7 +800,7 @@ class Validator(object):
         # TODO: debug sensitive?
         logging.debug("validate endpoint %s headers %s body %s", endpoint, json.dumps(headers), json.dumps(body))
 
-        response = requests.post(endpoint, headers=headers, data=body, verify=False)
+        response = requests.post(endpoint, headers=headers, data=body, verify=Config['verify_tls'])
         content = response.content.decode('utf-8')
         if response.status_code > 400:
             logging.error('validate failed on %s. returned [%s] %s', endpoint, response.status_code, content)
@@ -834,7 +834,7 @@ class Auth0Validator(Validator):
     def validate(self, token, provider=PROVIDER_AUTH0):
         endpoint = Config['providers'][PROVIDER_AUTH0]['userinfo_endpoint']
         endpoint += '?access_token={}'.format(token)
-        response = requests.get(endpoint, verify=False)
+        response = requests.get(endpoint, verify=Config['verify_tls'])
         if response.status_code < 300:
             try:
                 body = json.loads(response.content.decode('utf-8'))
@@ -883,7 +883,7 @@ class GoogleValidator(Validator):
         ept = get_provider_config(provider, 'introspection_endpoint')
         endpoint = '{}?access_token={}'.format(ept, token)
 
-        response = requests.post(endpoint, verify=False)
+        response = requests.post(endpoint, verify=Config['verify_tls'])
         content = response.content.decode('utf-8')
         if response.status_code > 400:
             logging.warn('validate failed on %s. returned [%s] %s',
