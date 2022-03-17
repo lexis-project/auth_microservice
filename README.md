@@ -6,7 +6,7 @@
 Docker based installation
 Production-ready Docker compose is available with uwsgi, nginx and PostgreSQL.
 ```
-1. gh clone https://github.com/lexis-project/auth_microservice.git /opt/
+1. wget https://github.com/lexis-project/auth_microservice.git /opt/
 2. mkdir /etc/auth_microservice
 2. Copy `auth_microservice.env.example` to `/etc/auth_microservice/auth_microservice.env`
 3. Edit `auth_microservice.env` and set `POSTGRESS_PASSWORD`
