@@ -2,29 +2,74 @@
 
 # auth_microservice
 
-Microservice which abstracts out OAuth2/OpenID exchanges and token management from applications
 
-## Docker
+Docker based installation
 Production-ready Docker compose is available with uwsgi, nginx and PostgreSQL.
+```
+1. wget https://github.com/lexis-project/auth_microservice.git /opt/
+2. mkdir /etc/auth_microservice
+2. Copy `auth_microservice.env.example` to `/etc/auth_microservice/auth_microservice.env`
+3. Edit `auth_microservice.env` and set `POSTGRESS_PASSWORD`
+4. Copy `example/config/*` to `/etc/auth_microservice` on the target machine
+5. Fill out all information in `/etc/auth_microservice`
+```
 
-Starting the service: `docker compose --env-file auth_microservice.env up`
+example of filled files
+```
+[root@irods-api auth_microservice]# cat config.json
+{
+    "redirect_uri": "https://irods-api.some_domain.com:8443/authcallback",
+    "root_return_to": "https://irods-api.some_domain.com.cz:8443/authcallback",
+    "root_default_provider": "keycloak_openid",
+    "url_expiration_timeout": 300,
+    "real_time_validate_default": false,
+    "real_time_validate_cache_retention_timeout": 60,
+    "providers": {
+        "keycloak_openid": {
+            "standard": "OpenID Connect",
+            "client_id": "IT4I_IRODS_AUTH",
+            "client_secret": "secret_from_keycloak",
+            "metadata_url": "https://some_domain_of_keycloak.com/realms/AAI/.well-known/openid-configuration"
+        }
+    }
+}
 
-### Configuration
-1. Copy `auth_microservice.env.example` to `auth_microservice.env`
-2. Edit `auth_microservice.env` and set `POSTGRESS_PASSWORD`
-3. Copy `example/config/*` to `/etc/auth_microservice` on the target machine
-4. Fill out all information in `/etc/auth_microservice`
-
-Use the following template for `db.credentials` - change only password:
-```json
+[root@irods-api auth_microservice]# cat db.credentials
 {
     "user": "auth_microservice",
-    "password": "< SAME AS IN auth_microservice.env >",
+    "password": "db_password",
     "host": "postgres",
     "port": "5432",
     "backend": "django.db.backends.postgresql_psycopg2"
+
 }
 ```
+fill `/etc/auth_microservice/*.key` by run
+`$ python3 -c "import os, binascii; print(binascii.hexlify(os.urandom(32)).decode('utf-8'))"`
+
+insert admin.key to `/opt/auth_microservice/scripts/credentials.py` and run
+`python /opt/auth_microservice/scripts/create_app_key.py`
+
+generated string put into
+`/opt/auth_microservice/scripts/autologin.py`
+
+Starting the service:
+```
+docker compose up
+## wail until db container will stuck (more than 3sec at one line), then shutdown by ctrl+c and start again
+docker-compose up
+now it will run correctly
+```
+
+in case of changes of config, docker containers has to be newly created
+```
+docker rm
+docker volume rm
+```
+
+
+
+### run in non docker mode
 
 ## Installation
 
