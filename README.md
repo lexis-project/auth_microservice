@@ -6,7 +6,7 @@
 Docker based installation
 Production-ready Docker compose is available with uwsgi, nginx and PostgreSQL.
 ```
-1. wget https://github.com/lexis-project/auth_microservice.git /opt/
+1. gh clone https://github.com/lexis-project/auth_microservice.git /opt/
 2. mkdir /etc/auth_microservice
 2. Copy `auth_microservice.env.example` to `/etc/auth_microservice/auth_microservice.env`
 3. Edit `auth_microservice.env` and set `POSTGRESS_PASSWORD`
@@ -44,16 +44,7 @@ example of filled files
 
 }
 ```
-fill `/etc/auth_microservice/*.key` by run
-`$ python3 -c "import os, binascii; print(binascii.hexlify(os.urandom(32)).decode('utf-8'))"`
-
-insert admin.key to `/opt/auth_microservice/scripts/credentials.py` and run
-`python /opt/auth_microservice/scripts/create_app_key.py`
-
-generated string put into
-`/opt/auth_microservice/scripts/autologin.py`
-
-Starting the service:
+6. Starting the service:
 ```
 docker compose up
 ## wail until db container will stuck (more than 3sec at one line), then shutdown by ctrl+c and start again
@@ -61,10 +52,24 @@ docker-compose up
 now it will run correctly
 ```
 
+7. fill `/etc/auth_microservice/*.key` by run
+```
+$ python3 -c "import os, binascii; print(binascii.hexlify(os.urandom(32)).decode('utf-8'))"
+```
+
+8. insert admin.key to `/opt/auth_microservice/scripts/credentials.py` 
+- for this step, containers has to be started already. Now just run
+```
+python /opt/auth_microservice/scripts/create_app_key.py
+```
+
+9. generated string put into irods server, to `/etc/irods/server_config.json` as `token_service_key`, and restart irods.service
+
 in case of changes of config, docker containers has to be newly created
 ```
-docker rm
-docker volume rm
+docker-compose down
+docker rm  
+docker volume rm api db 
 ```
 
 
